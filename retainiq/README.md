@@ -153,6 +153,43 @@ demo it:
 5. **Retention Team** → open Ravi → mark outcome *Retained*
 6. **Retention Manager** / **Business Owner** → open Ravi → see the complete, correctly-ordered activity timeline; Owner's Retention Analytics page reflects the new outcome
 
+## Optional: Google Cloud Storage upload backup
+
+`POST /analyze` (the retention-manager CSV upload) can additionally store a
+copy of the raw file in a Google Cloud Storage bucket, purely as an audit
+backup — the analyze pipeline itself still runs entirely in-memory and never
+depends on GCS (see `backend/gcs.py`). If it's not configured, or the
+upload fails for any reason, the endpoint behaves exactly as before and
+`gcs_backup_uri` in the response is `null`.
+
+**One-time GCP setup:**
+
+1. Create (or pick) a GCP project at console.cloud.google.com and make sure
+   billing is enabled (GCS has a generous free tier; this demo's traffic
+   won't exceed it).
+2. Enable the Cloud Storage API for the project.
+3. Create a bucket, e.g. `retainiq-uploads-<your-id>` (bucket names are
+   globally unique).
+4. Create a service account with the **Storage Object Admin** role scoped to
+   that bucket, then create a JSON key for it and download it.
+5. Save the key as `backend/gcs-key.json` (already gitignored — never commit
+   it).
+
+**Run with it enabled:**
+
+```bash
+# Windows (PowerShell)
+$env:GOOGLE_APPLICATION_CREDENTIALS = "gcs-key.json"
+$env:RETAINIQ_GCS_BUCKET = "retainiq-uploads-<your-id>"
+
+# macOS/Linux
+export GOOGLE_APPLICATION_CREDENTIALS=gcs-key.json
+export RETAINIQ_GCS_BUCKET=retainiq-uploads-<your-id>
+```
+
+then start the backend as usual. Without `RETAINIQ_GCS_BUCKET` set, uploads
+are skipped silently and the app runs exactly as it did before — no GCP
+account is required for local development or demoing.
 ## Architecture note: why SQLite
 
 The original build had "no database" — every response was recomputed from

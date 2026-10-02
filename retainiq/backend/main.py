@@ -11,6 +11,7 @@ from economics import DEFAULT_HORIZON_MONTHS
 from auth import authenticate, create_access_token, get_current_user, require_roles
 import db
 import customer_cache
+import gcs
 from cases import router as cases_router
 
 app = FastAPI(title="RetainIQ API")
@@ -89,6 +90,7 @@ async def analyze(
         )
 
     customer_cache.set_customers(result["customers"])
+    result["gcs_backup_uri"] = gcs.upload_csv(file.filename, raw)
     return result
 
 
